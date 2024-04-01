@@ -4,6 +4,7 @@ import Layout from "../../common/Layout";
 import loadinggif from "../../assets/images/loading.gif";
 import robotarm from "../../assets/images/robotarm.svg";
 import final from "../../assets/images/final.svg";
+import { FlashcardArray } from "react-quizlet-flashcard";
 import summarywhiteicon from "../../assets/images/summarywhiteicon.svg"
 import summaryblueicon from "../../assets/images/summaryblueicon.svg"
 import originalIcon from "../../assets/images/original.svg"
@@ -14,7 +15,6 @@ import flashcardwhiteicon from "../../assets/images/flashcardwhiteicon.svg"
 import flashcardblueicon from "../../assets/images/flashcardblueicon.svg"
 
 
-
 const EventList = () => {
   const [state, setState] = useState({
     youtubeLink: "",
@@ -23,6 +23,7 @@ const EventList = () => {
       subjects: {},
       quizzes: {},
       transcript: "",
+      flashcards: {},
     },
     isLoading: false,
     selectedText: "",
@@ -35,6 +36,7 @@ const EventList = () => {
     summarySelected: true,
     subjectsSelected: false,
     quizzesSelected: true,
+    flashcardSelected: false,
     textSource: "quizzes",
   });
   const [selectedAnswers, setSelectedAnswers] = useState({});
@@ -152,12 +154,58 @@ const EventList = () => {
         transcript: transcriptData,
         user_id: state.user_id,
       });
+      const flashcardDataPromise = fetchData("flashcards", {
+        transcript: transcriptData,
+        user_id: state.user_id,
+      });
+
       const [quizzesData, flashcardsData] =
         await Promise.all([
-          quizzesDataPromise
+          quizzesDataPromise,
+          flashcardDataPromise
         ]);
 
-     
+      const adaptedFlashcards = flashcardsData.questions.map((question, i) => ({
+        id: i,
+        frontHTML: (
+          <div style={{ display: "flex", height: "100%" }}>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                padding: "0 10px",
+              }}
+            >
+              <div className="flashcard-title">
+                <h6 style={{ margin: 0 }}>{question}</h6>
+              </div>
+            </div>
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <img
+                src={flashcardsData.images[i]}
+                alt="Card"
+                className="img-thumbnail flashcard-img"
+              />
+            </div>
+          </div>
+        ),
+        backHTML: (
+          <div className="backstyle">
+            <div className="backstyle-text">
+              <h4>{flashcardsData.answers[i]}</h4>
+            </div>
+          </div>
+        ),
+      }));
 
       setState((prevState) => ({
         ...prevState,
@@ -167,6 +215,7 @@ const EventList = () => {
           summary: summaryData,
           subjects: subjectsData,
           quizzes: { data: quizzesData.data.map((quiz) => JSON.parse(quiz)) },
+          flashcards: adaptedFlashcards,
         },
         isLoading: false,
       }));
@@ -176,7 +225,7 @@ const EventList = () => {
   };
 
   const handleGenerateQuizClick = () => {
-    setState((prevState) => ({ ...prevState, showStepThree: true, quizzesSelected: true}));
+    setState((prevState) => ({ ...prevState, showStepThree: true, quizzesSelected: true, flashcardSelected: false }));
     setTimeout(() => {
       stepThreeRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
@@ -370,9 +419,9 @@ const EventList = () => {
                 type="button"
                 className="buttons1"
                 onClick={handleGenerateQuizClick}
-                disabled={!state.apiData.quizzes?.data?.length}
+                disabled={!state.apiData.quizzes?.data?.length || !state.apiData.flashcards?.length}
               >
-                Next {(!state.apiData.quizzes?.data?.length) && <img src={loadinggif} alt="Loading..." className="loading" />}
+                Next {(!state.apiData.quizzes?.data?.length || !state.apiData.flashcards?.length) && <img src={loadinggif} alt="Loading..." className="loading" />}
               </button>
             </div>
           </div>
@@ -392,12 +441,42 @@ const EventList = () => {
                 <img src={state.quizzesSelected ? quizwhiteicon : quizblueicon} alt="quizzes" className="button-icon" />
                 Quizzes
               </button>
-              
+              <button
+                type="button"
+                className={`buttons1 ${state.flashcardSelected ? "" : "unselected"
+                  }`}
+                onClick={() => {
+                  setState((prevState) => ({
+                    ...prevState,
+                    flashcardSelected: true,
+                    quizzesSelected: false,
+                  }));
+                }}
+              >
+                <img
+                  src={state.flashcardSelected ? flashcardwhiteicon : flashcardblueicon}
+                  alt="flashcards"
+                  className="button-icon"
+                />
+                Flashcards
+              </button>
             </div>
             <div className={state.flashcardSelected ? "text-box2" : "text-box"}>
               {state.quizzesSelected
                 ? <QuizzesContent quizzesData={state.apiData.quizzes.data} showStepThree={state.showStepThree} selectedAnswers={selectedAnswers} setSelectedAnswers={setSelectedAnswers} />
-               : ''}
+                : <FlashcardArray
+                  cards={state.apiData.flashcards}
+                  frontCardStyle={{ padding: 20 }}
+                  backCardStyle={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 20,
+                    height: "100%", // Set a specific height if necessary
+                    width: "100%",
+                  }}
+                  FlashcardArrayStyle={{ textAlign: "center" }}
+                />}
             </div>
             <div className="button-row">
               <button
