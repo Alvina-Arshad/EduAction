@@ -44,7 +44,10 @@
     "overrides": {
         "react-animate-on-scroll": {
             "react": "^18.0.0"
-        }
+        },
+        "react-scroll": {
+            "react": "^18.0.0"
+          }
     },    
     "browserslist": {
         "production": [
