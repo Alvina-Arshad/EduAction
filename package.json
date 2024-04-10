@@ -42,9 +42,9 @@
         ]
     },
     "engines": {
-        "node": ">= 14.0.0",
-        "npm": ">= 6.0.0"
-      },
+        "node": "16.20.2",
+        "npm": "8.19.4"
+      },      
     "overrides": {
         "react-animate-on-scroll": {
             "react": "^18.0.0"
